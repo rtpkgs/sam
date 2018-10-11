@@ -6,12 +6,12 @@ void SetSpeed(unsigned char _speed);
 void SetPitch(unsigned char _pitch);
 void SetMouth(unsigned char _mouth);
 void SetThroat(unsigned char _throat);
-void EnableSingmode();
+void EnableSingmode(void);
 
-int SAMMain();
+int SAMMain(void);
 
-char* GetBuffer();
-int GetBufferLength();
+char* GetBuffer(void);
+int GetBufferLength(void);
 
 
 //char input[]={"/HAALAOAO MAYN NAAMAEAE IHSTT SAEBAASTTIHAAN \x9b\x9b\0"};
