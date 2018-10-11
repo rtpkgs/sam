@@ -1,63 +1,253 @@
-# sam
+SAM
+===
 
-## 1、介绍
+Software Automatic Mouth - Tiny Speech Synthesizer 
 
-> 说明：你需要在这里对项目进行简单的介绍，描述项目背景，当前现状、功能特点等等……
 
-这是一个在 RT-Thread 上，用于演示的 package 。展示了一个 package 大致包括的内容，以及对应的一些模版文件。
+What is SAM?
+============
 
-### 1.1 目录结构
+Sam is a very small Text-To-Speech (TTS) program written in C, that runs on most popular platforms.
+It is an adaption to C of the speech software SAM (Software Automatic Mouth) for the Commodore C64 published 
+in the year 1982 by Don't Ask Software (now SoftVoice, Inc.). It includes a Text-To-Phoneme converter called reciter and a Phoneme-To-Speech routine for the 
+final output. It is so small that it will work also on embedded computers. On my computer it takes
+less than 39KB (much smaller on embedded devices as the executable-overhead is not necessary) of disk space and is a fully stand alone program. 
+For immediate output it uses the SDL-library, otherwise it can save .wav files. 
 
-> 说明：参考下面表格，整理出 packages 的目录结构
+An online version and executables for Windows can be found on the web site: http://simulationcorner.net/index.php?page=sam
 
-| 名称 | 说明 |
-| ---- | ---- |
-| docs  | 文档目录 |
-| examples | 例子目录，并有相应的一些说明 |
-| inc  | 头文件目录 |
-| src  | 源代码目录 |
-| port | 移植代码目录。如果没有移植代码，可以不需要 |
+Compile
+=======
 
-### 1.2 许可证
+Simply type "make" in your command prompt.
+In order to compile without SDL remove the SDL statements from the CFLAGS and LFLAGS variables in the file "Makefile".
 
-> 说明：请在这里说明该 package 的授权许可，例如： GPLv2、LGPLv2.1、MIT、Apache license v2.0、BSD 等。
+It should compile on every UNIX-like operating system. For Windows you need Cygwin or MinGW( + libsdl).
 
-hello package 遵循 LGPLv2.1 许可，详见 `LICENSE` 文件。
 
-### 1.3 依赖
+Usage
+=====
 
-> 说明：列出该 package 对于其他 package 、RT-Thread 操作系统版本等软件方面的依赖关系。
+type
 
-- RT-Thread 3.0+
+	./sam I am Sam
 
-## 2、如何打开 hello
+for the first output.
 
-> 说明：描述该 package 位于 menuconfig 的位置，并对与其相关的配置进行介绍
+If you have disabled SDL try
 
-使用 hello package 需要在 RT-Thread 的包管理器中选择它，具体路径如下：
+	./sam -wav i_am_sam.wav I am Sam
 
-```
-RT-Thread online packages
-    miscellaneous packages --->
-        [*] A hello package
-```
+to get a wav file. This file can be played by many media players available for the PC.
 
-然后让 RT-Thread 的包管理器自动更新，或者使用 `pkgs --update` 命令更新包到 BSP 中。
+you can try other options like
+	-pitch number
+	-speed number
+	-throat number
+	-mouth number
 
-## 3、使用 sam
+Some typical values written in the original manual are:
 
-> 说明：在这里介绍 package 的移植步骤、使用方法、初始化流程、准备工作、API 等等，如果移植或 API 文档内容较多，可以将其独立至 `docs` 目录下。
+	DESCRIPTION          SPEED     PITCH     THROAT    MOUTH
+	Elf                   72        64        110       160
+	Little Robot          92        60        190       190
+	Stuffy Guy            82        72        110       105
+	Little Old Lady       82        32        145       145
+	Extra-Terrestrial    100        64        150       200
+	SAM                   72        64        128       128
 
-在打开 hello package 后，当进行 bsp 编译时，它会被加入到 bsp 工程中进行编译。
 
-* 完整的 API 手册可以访问这个[链接](docs/api.md)
-* 更多文档位于 [`/docs`](/docs) 下，使用前 **务必查看**
+It can even sing
+look at the file "sing"
+for a small example.
 
-## 4、注意事项
+For the phoneme input table look in the Wiki.
 
-> 说明：列出在使用这个 package 过程中需要注意的事项；列出常见的问题，以及解决办法。
 
-## 5、联系方式 & 感谢
+A description of additional features can be found in the original manual at
+	http://www.retrobits.net/atari/sam.shtml
+or in the manual of the equivalent Apple II program
+	http://www.apple-iigs.info/newdoc/sam.pdf
 
-* 维护：liu2guang
-* 主页：https://github.com/liu2guang/sam
+
+Adaption To C
+=============
+
+This program was converted semi-automatic into C by converting each assembler opcode.
+e. g. 
+
+	lda 56		=>	A = mem[56];
+	jmp 38018  	=>	goto pos38018;
+	inc 38		=>	mem[38]++;
+	.			.
+	.			.
+
+Then it was manually rewritten to remove most of the 
+jumps and register variables in the code and rename the variables to proper names. 
+Most of the description below is a result of this rewriting process.
+
+Unfortunately its still a not very good readable. But you should see where I started :)
+
+
+
+Short description
+=================
+
+First of all I will limit myself here to a very coarse description. 
+There are very many exceptions defined in the source code that I will not explain. 
+Also a lot of code is unknown for me e. g. Code47503. 
+For a complete understanding of the code I need more time and especially more eyes have a look on the code. 
+
+Reciter
+-------
+
+It changes the english text to phonemes by a ruleset shown in the wiki.
+
+The rule
+	" ANT(I)",	"AY",
+means that if he find an "I" with previous letters " ANT", exchange the I by the phoneme "AY".
+
+There are some special signs in this rules like
+	#
+	&
+	@
+	^
+	+
+	:
+	%
+which can mean e. g. that there must be a vocal or a consonant or something else. 
+
+With the -debug option you will get the corresponding rules and the resulting phonemes.
+
+
+Output
+------
+
+Here is the full tree of subroutine calls:
+
+SAMMain()
+	Parser1()
+	Parser2()
+		Insert()
+	CopyStress()
+	SetPhonemeLength()
+	Code48619()
+	Code41240()
+		Insert()
+	Code48431()
+		Insert()
+		
+	Code48547
+		Code47574
+			Special1
+			Code47503
+			Code48227
+
+
+SAMMain() is the entry routine and calls all further routines. 
+Parser1 transforms the phoneme input and transforms it to three tables
+	phonemeindex[]
+	stress[]
+	phonemelength[] (zero at this moment)
+	
+This tables are now changed: 
+
+Parser2 exchanges some phonemes by others and inserts new. 
+CopyStress adds 1 to the stress under some circumstances
+SetPhonemeLength sets phoneme lengths. 
+Code48619 changes the phoneme lengths
+Code41240 adds some additional phonemes
+Code48431 has some extra rules
+
+
+The wiki shows all possible phonemes and some flag fields.  
+The final content of these tables can be seen with the -debug command.
+
+
+In the function PrepareOutput() these tables are partly copied into the small tables:
+	phonemeindexOutput[]
+	stressOutput[]
+	phonemelengthOutput[]
+for output.
+
+Final Output
+------------
+
+Except of some special phonemes the output is build by a linear combination:
+	
+	A =   A1 * sin ( f1 * t ) +
+	      A2 * sin ( f2 * t ) +
+	      A3 * rect( f3 * t )
+
+where rect is a rectangular function with the same periodicity like sin. 
+It seems really strange, but this is really enough for most types of phonemes. 
+
+Therefore the above phonemes are converted with some tables to 
+	pitches[]
+	frequency1[]  =  f1
+	frequency2[]  =  f2
+	frequency3[]  =  f3
+	amplitude1[]  =  A1
+	amplitude2[]  =  A2
+	amplitude3[]  =  A3
+	
+Above formula is calculated in one very good omptimized routine.
+It only consist of 26 commands:
+
+    48087: 	LDX 43		; get phase	
+    CLC		
+	LDA 42240,x	; load sine value (high 4 bits)
+	ORA TabAmpl1,y	; get amplitude (in low 4 bits)
+	TAX		
+	LDA 42752,x	; multiplication table
+	STA 56		; store 
+
+	LDX 42		; get phase
+	LDA 42240,x	; load sine value (high 4 bits)
+	ORA TabAmpl2,y	; get amplitude (in low 4 bits)
+	TAX		
+	LDA 42752,x	; multiplication table
+	ADC Var56	; add with previous values
+	STA 56		; and store
+
+	LDX 41		; get phase
+	LDA 42496,x	; load rect value (high 4 bits)
+	ORA TabAmpl3,y	; get amplitude (in low 4 bits)
+	TAX		
+	LDA 42752,x	; multiplication table
+	ADC 56		; add with previous values
+
+	ADC #136		
+	LSR A		; get highest 4 bits
+	LSR A		
+	LSR A		
+	LSR A		
+	STA 54296	;SID   main output command
+
+
+The rest is handled in a special way. At the moment I cannot figure out in which way. 
+But it seems that it uses some noise (e. g. for "s") using a table with random values. 
+
+License
+=======
+
+The software is a reverse-engineered version of a commercial software published more than 30 years ago.
+The current copyright holder is SoftVoice, Inc. (www.text2speech.com)
+
+Any attempt to contact the company failed. The website was last updated in the year 2009.
+The status of the original software can therefore best described as Abandonware 
+(http://en.wikipedia.org/wiki/Abandonware)
+
+As long this is the case I cannot put my code under any specific open source software license
+Use it at your own risk.
+
+
+
+Contact
+=======
+
+If you have questions don' t hesitate to ask me.
+If you discovered some new knowledge about the code please mail me.
+
+Sebastian Macke
+Email: sebastian@macke.de
